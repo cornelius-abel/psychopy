@@ -23,7 +23,7 @@ class SoundComponent(BaseComponent):
         super(SoundComponent, self).__init__(exp, parentName, name,
                 startType=startType,startVal=startVal,
                 stopType=stopType, stopVal=stopVal,
-                startEstim=startEstim, durationEstim=durationEstim)
+                startEstim=startEstim, durationEstim=durationEstim, forceEndRoutine=False)
         self.type='Sound'
         self.url="http://www.psychopy.org/builder/components/sound.html"
         self.exp.requirePsychopyLibs(['sound'])
@@ -39,6 +39,10 @@ class SoundComponent(BaseComponent):
             updates='constant', allowedUpdates=['constant','set every repeat','set every frame'],
             hint=_translate("The volume (in range 0 to 1)"),
             label=_localized["volume"])
+        self.params['forceEndRoutine']=Param(forceEndRoutine, valType='bool', allowedTypes=[],
+            updates='constant', allowedUpdates=[],
+            hint="End the routine after sound finished (e.g end the trial)?",
+            label="Force end of Routine")            
 
     def writeInitCode(self,buff):
         inits = components.getInitVals(self.params)#replaces variable params with sensible defaults
@@ -61,3 +65,8 @@ class SoundComponent(BaseComponent):
             self.writeStopTestCode(buff)
             buff.writeIndented("%s.stop()  # stop the sound (if longer than duration)\n" %(self.params['name']))
             buff.setIndentLevel(-1, relative=True)#because of the 'if' statement of the time test
+        #do force end of trial on sound finished
+        if self.params['forceEndRoutine'].val==True:
+            buff.writeIndented("if %s.getDuration() < t:  # force-end the routine\n" % (self.params['name']))
+            buff.writeIndented("    %s.stop()  # stop the sound (if longer than duration)\n" %(self.params['name']))
+            buff.writeIndented("    continueRoutine = False\n")		
